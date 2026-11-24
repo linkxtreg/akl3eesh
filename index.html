@@ -3583,6 +3583,9 @@ function bubbleTexture(txt){
   return bubbleTex[txt]=tex;
 }
 let bubbles=[];
+// where a customer's speech bubble goes: over their head, except balcony customers, whose heads are above the
+// top of the screen when you stop below them, so theirs floats out over the street at eye height
+function sayAt(c, dy=2.3){ if(!c.home) return [c.rg.g, dy]; const p=c.rg.g.getWorldPosition(new THREE.Vector3()); return [new THREE.Vector3(p.x-c.side*1.6, 2.6, p.z), 0]; }
 function bubble(txt, obj, dy=2.3, life=1.4){
   if(SIM) return null;
   const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:bubbleTexture(txt), transparent:true, depthTest:false}));
@@ -3936,7 +3939,7 @@ function payRider(c){
     m.position.copy(from); m.scale.setScalar(coin?0.7:1); m.rotation.set(rnd(-0.4,0.4),rnd(0,6),rnd(-0.4,0.4)); scene.add(m);
     cash.push({m,from:from.clone(),t:-0.5-i*0.13,v,coin,spin:rnd(-9,9)});
   });
-  bubble(`+${total} ج 💰`,c.rg.g,c.home?2.4:2.6,2);
+  bubble(`+${total} ج 💰`,...(c.home?(([o,d])=>[o,d+0.7])(sayAt(c)):[c.rg.g,2.6]),2);
   return total;
 }
 function updateCash(dt){
@@ -4279,10 +4282,10 @@ function updateCustomers(dt){
           for(let i=0;i<got;i++){ const m=loaves.shift(); const wp=new THREE.Vector3(); m.getWorldPosition(wp); tray.remove(m); scene.add(m); m.position.copy(wp);
             handoffs.push({m,from:wp.clone(),to:(c.drop||c.basket)?(c.drop||c.basket).getWorldPosition(new THREE.Vector3()):new THREE.Vector3(p.x,1.3,p.z),t:-i*0.12}); }
           deliverSound(got); combo=Math.min(COMBO_MAX,combo+1); maxCombo=Math.max(maxCombo,combo); c.mult=combo; customersServed++; servedLoaves+=got; c.state='thanks'; c.payT=0.8; c.t=0; if(c.sign){ const b=bubbles.find(b=>b.sp===c.sign); if(b) b.life=0; c.sign=null; }
-          bubble(pick(SAY[c.home?'woman':'man'][c.short?'part':'full']),c.rg.g,2.3,1.8); if(c.mult<2) toast(c.short?`${got} بس من ${c.type.order} رغيف: بنص التمن 💵`:`سلّمت ${got} رغيف! 💵 +${got*LOAF_PRICE}`); else showCombo(c.mult);
+          bubble(pick(SAY[c.home?'woman':'man'][c.short?'part':'full']),...sayAt(c),1.8); if(c.mult<2) toast(c.short?`${got} بس من ${c.type.order} رغيف: بنص التمن 💵`:`سلّمت ${got} رغيف! 💵 +${got*LOAF_PRICE}`); else showCombo(c.mult);
         } else if(!c.told){ c.told=true; toast('العيش اللي معاك مش مكفّي الزبون ده 😕'); }
       }
-      if(state==='play' && ahead<-4){ c.state='missed'; if(c.sign){ const b=bubbles.find(b=>b.sp===c.sign); if(b) b.life=0; c.sign=null; } bubble('😞',c.rg.g,2.3,1.5); }
+      if(state==='play' && ahead<-4){ c.state='missed'; if(c.sign){ const b=bubbles.find(b=>b.sp===c.sign); if(b) b.life=0; c.sign=null; } bubble('😞',...sayAt(c),1.5); }
     } else if(c.state==='thanks'){
       if(c.payT>0){ c.payT-=dt; if(c.payT<=0) payRider(c); }   // hands over the money once the bread is in their hands
       c.rg.arms[1].rotation.x=-2.2; c.rg.arms[1].rotation.z=0;
