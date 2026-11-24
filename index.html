@@ -2524,7 +2524,17 @@ let bellBuf=null, bellLoading=false, bellSrc=null;
 function loadBell(){ if(bellBuf||bellLoading) return; bellLoading=true;
   audio = audio || new (window.AudioContext||window.webkitAudioContext)();
   fetch('ui/sfx/bell.mp3').then(r=>r.arrayBuffer()).then(b=>audio.decodeAudioData(b)).then(d=>{ bellBuf=d; }).catch(()=>{ bellLoading=false; }); }
-addEventListener('pointerdown',()=>{ loadBell(); if(audio?.state==='suspended') audio.resume(); },{capture:true});   // unlock audio on the first touch
+// street ambience: a seamless 2-minute loop of a busy Cairo market, louder while riding, quieter in menus
+let ambGain=null, ambLoading=false;
+function startAmbience(){ if(ambGain||ambLoading) return; ambLoading=true;
+  fetch('ui/sfx/street.mp3').then(r=>r.arrayBuffer()).then(b=>audio.decodeAudioData(b)).then(buf=>{
+    const src=audio.createBufferSource(); src.buffer=buf; src.loop=true; src.loopStart=0.05; src.loopEnd=buf.duration-0.05;   // skip the encoder's padding at the seam
+    ambGain=audio.createGain(); ambGain.gain.value=0; src.connect(ambGain); ambGain.connect(audio.destination); src.start(0,0.05); updateAmbience(); })
+  .catch(()=>{ ambLoading=false; }); }
+function updateAmbience(){ if(!ambGain) return; const riding=state==='play' && !paused, v=!SET.sfx?0:riding?0.35:0.15;
+  if(Math.abs(ambGain.gain.value-v)>0.001) ambGain.gain.setTargetAtTime(v,audio.currentTime,0.4); }
+setInterval(updateAmbience,300);
+addEventListener('pointerdown',()=>{ loadBell(); if(audio?.state==='suspended') audio.resume(); startAmbience(); },{capture:true});   // unlock audio on the first touch
 function hornSound(){
   if(!SET.sfx) return;
   loadBell();
