@@ -2520,8 +2520,17 @@ let SET; try{ SET={...SET_DEF, ...JSON.parse(localStorage.getItem('breadSet')||'
 const SENS={low:3.2, mid:5, high:7.5};
 function saveSet(){ try{ localStorage.setItem('breadSet',JSON.stringify(SET)); }catch(e){} applySet(); }
 function applySet(){ document.body.classList.toggle('ctl-left', SET.side==='left'); }
+let bellBuf=null, bellLoading=false, bellSrc=null;
+function loadBell(){ if(bellBuf||bellLoading) return; bellLoading=true;
+  audio = audio || new (window.AudioContext||window.webkitAudioContext)();
+  fetch('ui/sfx/bell.mp3').then(r=>r.arrayBuffer()).then(b=>audio.decodeAudioData(b)).then(d=>{ bellBuf=d; }).catch(()=>{ bellLoading=false; }); }
+addEventListener('pointerdown',()=>{ loadBell(); if(audio?.state==='suspended') audio.resume(); },{capture:true});   // unlock audio on the first touch
 function hornSound(){
   if(!SET.sfx) return;
+  loadBell();
+  if(bellBuf){ try{ if(audio.state==='suspended') audio.resume();
+    if(bellSrc){ try{ bellSrc.stop(); }catch(e){} }                 // a new ring cuts the last one short
+    const src=audio.createBufferSource(), g=audio.createGain(); g.gain.value=0.9; src.buffer=bellBuf; src.connect(g); g.connect(audio.destination); src.start(); bellSrc=src; return; }catch(e){} }
   // bike bell: two quick metallic "ding"s (a few inharmonic partials, sharp strike, ringing decay)
   try{
     audio = audio || new (window.AudioContext||window.webkitAudioContext)();
