@@ -2537,6 +2537,7 @@ setInterval(updateAmbience,300);
 // shop sounds: a shop plays its own sound only while you pass it. It starts from a random point (never the
 // beginning), fades in as you approach, fades out as you leave, and stops once you're out of earshot.
 const SHOP_SFX=[
+  {file:'ui/sfx/ahwa-match.mp3', vol:0.25, range:28, near:5, where:()=>customers.filter(c=>c.kind==='ahwa').map(c=>c.rg.g.position)},   // the cafe TV: an old Zamalek-Ahly match
   {file:'ui/sfx/ful-radio.mp3', vol:0.2, range:26, near:4, where:()=>customers.filter(c=>c.kind==='ful').map(c=>c.rg.g.position)},
 ];
 const _shopP=new THREE.Vector3();
