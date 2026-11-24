@@ -159,7 +159,7 @@
   <span id="deadline" hidden></span>
 </div>
 <link rel="stylesheet" href="ui/kit.css">
-<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+<script type="importmap">{"imports":{"three":"./lib/three/three.module.js","three/addons/":"./lib/three/"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -4434,7 +4434,15 @@ function buildSheet(){
   SHEET={sc,cam}; window.__sheetImage=(w=3200,h=1900)=>{ renderer.setPixelRatio(1); renderer.setSize(w,h,false); const a0=w/h, hh=Math.max(D*0.3+2, W/2/a0); cam.left=-hh*a0; cam.right=hh*a0; cam.top=hh; cam.bottom=-hh; cam.updateProjectionMatrix(); renderer.render(sc,cam); return renderer.domElement.toDataURL('image/png'); };
 }
 if(new URLSearchParams(location.search).has('sheet')) setTimeout(buildSheet,300);
-function loop(){ if(paused){ clock.getDelta(); renderer.render(scene,camera); requestAnimationFrame(loop); return; } if(SHEET){ renderer.render(SHEET.sc,SHEET.cam); requestAnimationFrame(loop); return; } const dt=Math.min(clock.getDelta(),1/30); step(dt); animateIdlers(clock.elapsedTime); renderer.render(scene,camera); requestAnimationFrame(loop); }
+// adaptive quality: if frames run slow, lower the resolution step by step, then drop shadows
+const QSTEPS=[Math.min(devicePixelRatio,1.5),1.25,1,0.85,0.7]; let qi=LOWGFX?2:0, qT=0, qN=0, qLast=performance.now();
+function adaptQuality(){
+  const now=performance.now(), d=now-qLast; qLast=now; if(d>250) return;      // ignore tab switches
+  qT+=d; qN++; if(qT<2000) return;
+  const avg=qT/qN; qT=0; qN=0;
+  if(avg>20 && qi<QSTEPS.length-1){ qi++; renderer.setPixelRatio(QSTEPS[qi]); if(qi>=2 && renderer.shadowMap.enabled){ renderer.shadowMap.enabled=false; scene.traverse(o=>{ if(o.material) o.material.needsUpdate=true; }); } }
+}
+function loop(){ adaptQuality(); if(paused){ clock.getDelta(); renderer.render(scene,camera); requestAnimationFrame(loop); return; } if(SHEET){ renderer.render(SHEET.sc,SHEET.cam); requestAnimationFrame(loop); return; } const dt=Math.min(clock.getDelta(),1/30); step(dt); animateIdlers(clock.elapsedTime); renderer.render(scene,camera); requestAnimationFrame(loop); }
 buildStack(); loop();
 </script>
 <script>
