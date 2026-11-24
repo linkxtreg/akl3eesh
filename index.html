@@ -2537,13 +2537,13 @@ setInterval(updateAmbience,300);
 // shop sounds: a shop plays its own sound only while you pass it. It starts from a random point (never the
 // beginning), fades in as you approach, fades out as you leave, and stops once you're out of earshot.
 const SHOP_SFX=[
-  {file:'ui/sfx/ahwa-match.mp3', vol:0.14, range:17, near:5, where:()=>ahwaTV(0)},   // each cafe's TV shows one thing: an old Zamalek-Ahly match,
-  {file:'ui/sfx/ahwa-film1.mp3', vol:0.14, range:17, near:5, where:()=>ahwaTV(1)},   // a scene from اللعب مع الكبار,
-  {file:'ui/sfx/ahwa-film2.mp3', vol:0.14, range:17, near:5, where:()=>ahwaTV(2)},   // or عبد الفتاح القصري   // the cafe TV: an old Zamalek-Ahly match
-  {file:'ui/sfx/shop1.mp3', vol:0.12, range:15, near:4, where:()=>shopRadio(0)},   // shop radios: شعبان عبد الرحيم,
-  {file:'ui/sfx/shop2.mp3', vol:0.12, range:15, near:4, where:()=>shopRadio(1)},   // فاروق شوشة - لغتنا الجميلة,
-  {file:'ui/sfx/shop3.mp3', vol:0.12, range:15, near:4, where:()=>shopRadio(2)},   // عدوية - زحمة يا دنيا زحمة
-  {file:'ui/sfx/ful-radio.mp3', vol:0.12, range:15, near:4, where:()=>customers.filter(c=>c.kind==='ful').map(c=>c.rg.g.position)},
+  {file:'ui/sfx/ahwa-match.mp3', vol:0.14, range:32, near:5, where:()=>ahwaTV(0)},   // each cafe's TV shows one thing: an old Zamalek-Ahly match,
+  {file:'ui/sfx/ahwa-film1.mp3', vol:0.14, range:32, near:5, where:()=>ahwaTV(1)},   // a scene from اللعب مع الكبار,
+  {file:'ui/sfx/ahwa-film2.mp3', vol:0.14, range:32, near:5, where:()=>ahwaTV(2)},   // or عبد الفتاح القصري   // the cafe TV: an old Zamalek-Ahly match
+  {file:'ui/sfx/shop1.mp3', vol:0.12, range:30, near:4, where:()=>shopRadio(0)},   // shop radios: شعبان عبد الرحيم,
+  {file:'ui/sfx/shop2.mp3', vol:0.12, range:30, near:4, where:()=>shopRadio(1)},   // فاروق شوشة - لغتنا الجميلة,
+  {file:'ui/sfx/shop3.mp3', vol:0.12, range:30, near:4, where:()=>shopRadio(2)},   // عدوية - زحمة يا دنيا زحمة
+  {file:'ui/sfx/ful-radio.mp3', vol:0.12, range:30, near:4, where:()=>customers.filter(c=>c.kind==='ful').map(c=>c.rg.g.position)},
 ];
 let _tvNext=Math.floor(Math.random()*3);
 const ahwaTV=n=>customers.filter(c=>c.kind==='ahwa' && ((c.tv??=(_tvNext++)%3)===n)).map(c=>c.rg.g.position);   // cafes take turns: match, film, film
@@ -2560,7 +2560,7 @@ function updateShopSounds(){
     if(!S.buf) continue;
     let d=Infinity;
     if(state==='play' && !paused && SET.sfx) for(const p of S.where()){ const dd=Math.hypot(p.x-x,(p.z-z)*1); if(dd<d) d=dd; }
-    const v = d>=S.range ? 0 : S.vol*Math.min(1,Math.pow((S.range-d)/(S.range-S.near),1.6));
+    const v = d>=S.range ? 0 : S.vol*Math.min(1,Math.pow((S.range-d)/(S.range-S.near),1.2));
     if(v>0.001 && !S.src){                                         // coming into earshot: start somewhere in the middle
       const src=audio.createBufferSource(), g=audio.createGain(); src.buffer=S.buf; src.loop=true; g.gain.value=0; src.connect(g); g.connect(audio.destination);
       src.start(0, S.buf.duration*(0.1+Math.random()*0.75)); S.src=src; S.g=g;
