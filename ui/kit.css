@@ -1,0 +1,48 @@
+/* Bread Run UI kit: art cut straight from the design sheet; every label is live, editable text on top. */
+@import url('https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@700;800&display=swap');
+:root{ --ink:#3b2414; --kit-font:'Baloo Bhaijaan 2','Geeza Pro',system-ui,sans-serif; }
+.k{ position:relative; display:inline-block; background-size:100% 100%; background-repeat:no-repeat; container-type:size;
+  font-family:var(--kit-font); color:var(--ink); user-select:none; vertical-align:middle; }
+.k .t{ position:absolute; overflow:hidden; display:flex; align-items:center; justify-content:center; white-space:nowrap; line-height:1; font-weight:800;
+  outline:none; direction:rtl; }
+.k .t.ltr{ direction:ltr; }
+.k .t[contenteditable]:focus{ box-shadow:0 0 0 2px #3a86ff88; border-radius:6px; }
+/* text colour styles */
+.k .t.light{ color:#fff; -webkit-text-stroke:.09em var(--ink); paint-order:stroke fill; text-shadow:0 .07em 0 var(--ink); }
+.k .t.dark{ color:var(--ink); }
+/* meters */
+.k .track{ position:absolute; overflow:hidden; border-radius:999px; background:linear-gradient(#8f6f4f,#a98663 22%,#ab8864 70%,#c09d7b); box-shadow:inset 0 .12em .12em #0003; }
+.k .fill{ height:100%; width:var(--v,50%); border-radius:999px; transition:width .25s;
+  background:linear-gradient(#ffb547,#fb901e 55%,#e4760b); box-shadow:inset 0 .18em 0 #fff5; }
+.k.meter-timer .fill{ background:linear-gradient(#ff6a55,#e23f2b 55%,#c73322); }
+.k.press{ cursor:pointer; transition:transform .08s, filter .08s; }
+.k.press:active{ transform:translateY(3px); filter:brightness(.95); }
+.k.low{ animation:kpulse .6s infinite alternate; } @keyframes kpulse{ to{ transform:scale(1.05); } }
+.k.float{ animation:kfloat 1.2s ease-out forwards; }
+@keyframes kfloat{ 0%{ transform:translateY(10px) scale(.6); opacity:0 } 20%{ transform:none; opacity:1 } 100%{ transform:translateY(-60px); opacity:0 } }
+
+/* ---------- progress bar, built in code (only the icon is art) ---------- */
+.kbar{ --h:44px; --c1:#ffb547; --c2:#fb901e; --c3:#d9690a; position:relative; display:inline-flex; align-items:center; height:calc(var(--h)*1.5);
+  padding-left:calc(var(--h)*1.05); vertical-align:middle; }
+.kbar .ic{ position:absolute; left:0; top:50%; height:calc(var(--h)*1.55); transform:translateY(-50%); z-index:2; filter:drop-shadow(0 calc(var(--h)*.06) 0 #0003); }
+.kbar .tr{ position:relative; flex:1; height:var(--h); border-radius:999px; border:calc(var(--h)*.11) solid var(--ink);
+  background:linear-gradient(#8f6f4f,#a98663 25%,#ad8a66 70%,#c4a17f);
+  box-shadow:0 calc(var(--h)*.1) 0 #3b241455, 0 calc(var(--h)*.16) 0 #e9d9bd inset, inset 0 calc(var(--h)*.12) calc(var(--h)*.1) #0003; overflow:hidden; }
+.kbar .tr::before{ content:''; position:absolute; inset:calc(var(--h)*.14); left:calc(var(--h)*.1); border-radius:999px; }
+.kbar .fl{ position:absolute; left:0; top:0; bottom:0; width:var(--v,60%); min-width:calc(var(--h)*.9); border-radius:999px;
+  background:linear-gradient(var(--c1),var(--c2) 55%,var(--c3)); box-shadow:inset 0 calc(var(--h)*.14) 0 #fff6, inset 0 calc(var(--h)*-.1) 0 #0002, calc(var(--h)*.04) 0 0 #3b241433;
+  transition:width .3s ease; }
+.kbar .fl::after{ content:''; position:absolute; left:calc(var(--h)*.35); right:calc(var(--h)*.35); top:calc(var(--h)*.12); height:calc(var(--h)*.16); border-radius:999px; background:#fff7; }
+.kbar.red{ --c1:#ff7a66; --c2:#e5402c; --c3:#b82d1d; }
+.kbar.green{ --c1:#8fe06f; --c2:#5cb844; --c3:#2f8f3a; }
+.kbar.blue{ --c1:#7fb0ff; --c2:#3a86ff; --c3:#1f5fc9; }
+.kbar.empty .fl{ display:none; }
+
+/* ---------- HUD counter, built in code (only the icon is art) ---------- */
+.kc{ --h:52px; position:relative; display:inline-flex; align-items:center; justify-content:center; height:var(--h); width:calc(var(--h)*3.5);
+  padding:0 calc(var(--h)*.2) 0 calc(var(--h)*1.05); box-sizing:border-box; border:calc(var(--h)*.075) solid var(--ink); border-radius:calc(var(--h)*.36);
+  background:linear-gradient(#fff8ea,#f6e8cc 55%,#ead6b0); box-shadow:0 calc(var(--h)*.09) 0 var(--ink), inset 0 calc(var(--h)*.07) 0 #fff, inset 0 calc(var(--h)*-.08) 0 #d9c29a;
+  font:800 calc(var(--h)*.54)/1 var(--kit-font); color:var(--ink); direction:ltr; font-variant-numeric:tabular-nums; vertical-align:middle; white-space:nowrap; }
+.kc img{ position:absolute; left:calc(var(--h)*-.3); top:50%; height:calc(var(--h)*1.25); max-width:calc(var(--h)*1.4); object-fit:contain; transform:translateY(-52%); filter:drop-shadow(0 calc(var(--h)*.05) 0 #0003); }
+.kc span{ flex:1; text-align:center; line-height:1; height:auto; position:relative; }
+.kc.low{ color:#c62f22; animation:kpulse .6s infinite alternate; }
