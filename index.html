@@ -2571,6 +2571,8 @@ function updateShopSounds(){
   }
 }
 setInterval(updateShopSounds,60);
+// iPhone: play like media, so the game is heard even with the ring/silent switch on silent (iOS 17+)
+try{ if(navigator.audioSession) navigator.audioSession.type='playback'; }catch(e){}
 addEventListener('pointerdown',()=>{ loadBell(); if(audio?.state==='suspended') audio.resume(); startAmbience(); },{capture:true});   // unlock audio on the first touch
 function hornSound(){
   if(!SET.sfx) return;
