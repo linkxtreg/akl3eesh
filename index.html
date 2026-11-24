@@ -2527,7 +2527,7 @@ function loadBell(){ if(bellBuf||bellLoading) return; bellLoading=true;
 // street ambience: a seamless 2-minute loop of a busy Cairo market, louder while riding, quieter in menus
 let ambGain=null, ambLoading=false;
 function startAmbience(){ if(ambGain||ambLoading) return; ambLoading=true;
-  fetch('ui/sfx/street.mp3').then(r=>r.arrayBuffer()).then(b=>audio.decodeAudioData(b)).then(buf=>{
+  fetch('ui/sfx/bazaar.mp3').then(r=>r.arrayBuffer()).then(b=>audio.decodeAudioData(b)).then(buf=>{
     const src=audio.createBufferSource(); src.buffer=buf; src.loop=true; src.loopStart=0.05; src.loopEnd=buf.duration-0.05;   // skip the encoder's padding at the seam
     ambGain=audio.createGain(); ambGain.gain.value=0; src.connect(ambGain); ambGain.connect(audio.destination); src.start(0,0.05+Math.random()*(buf.duration-0.2)); updateAmbience(); })   // a different spot in the loop every time
   .catch(()=>{ ambLoading=false; }); }
