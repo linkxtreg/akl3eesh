@@ -2599,7 +2599,7 @@ function flutter(b){
 }
 // iPhone: play like media, so the game is heard even with the ring/silent switch on silent (iOS 17+)
 try{ if(navigator.audioSession) navigator.audioSession.type='playback'; }catch(e){}
-addEventListener('pointerdown',()=>{ loadBell(); if(audio?.state==='suspended') audio.resume(); startAmbience(); },{capture:true});   // unlock audio on the first touch
+addEventListener('pointerdown',()=>{ loadBell(); if(audio?.state==='suspended') audio.resume(); startAmbience(); preloadVoices(); },{capture:true});   // unlock audio on the first touch
 function hornSound(){
   if(!SET.sfx) return;
   loadBell();
@@ -2670,6 +2670,16 @@ function brakeSound(spd){   // rim brake: a scrape of grit (filtered noise) with
     o.connect(og); og.connect(audio.destination); o.start(t); vib.start(t); o.stop(t+dur); vib.stop(t+dur);
   }catch(e){}
 }
+const voiceBufs={};
+function sayVoice(i){
+  if(!SET.sfx || SIM) return;
+  try{ audio = audio || new (window.AudioContext||window.webkitAudioContext)(); if(audio.state==='suspended') audio.resume();
+    const play=b=>{ const src=audio.createBufferSource(), g=audio.createGain(); g.gain.value=0.9; src.buffer=b; src.connect(g); g.connect(audio.destination); src.start(); };
+    if(voiceBufs[i] instanceof AudioBuffer) play(voiceBufs[i]);
+    else if(!voiceBufs[i]) voiceBufs[i]=fetch(`ui/sfx/voice/m${i}.mp3`).then(r=>r.arrayBuffer()).then(b=>audio.decodeAudioData(b)).then(d=>{ voiceBufs[i]=d; play(d); }).catch(()=>{ voiceBufs[i]=null; });
+  }catch(e){}
+}
+function preloadVoices(){ if(!audio) return; for(let i=0;i<8;i++) if(!voiceBufs[i]) voiceBufs[i]=fetch(`ui/sfx/voice/m${i}.mp3`).then(r=>r.arrayBuffer()).then(b=>audio.decodeAudioData(b)).then(d=>voiceBufs[i]=d).catch(()=>voiceBufs[i]=null); }
 function cashSound(){
   if(!SET.sfx) return;
   try{ audio = audio || new (window.AudioContext||window.webkitAudioContext)(); if(audio.state==='suspended') audio.resume();
@@ -4350,7 +4360,8 @@ function updateCustomers(dt){
           for(let i=0;i<got;i++){ const m=loaves.shift(); const wp=new THREE.Vector3(); m.getWorldPosition(wp); tray.remove(m); scene.add(m); m.position.copy(wp);
             handoffs.push({m,from:wp.clone(),to:(c.drop||c.basket)?(c.drop||c.basket).getWorldPosition(new THREE.Vector3()):new THREE.Vector3(p.x,1.3,p.z),t:-i*0.12}); }
           deliverSound(got); combo=Math.min(COMBO_MAX,combo+1); maxCombo=Math.max(maxCombo,combo); c.mult=combo; customersServed++; servedLoaves+=got; c.state='thanks'; c.payT=0.8; c.t=0; if(c.sign){ const b=bubbles.find(b=>b.sp===c.sign); if(b) b.life=0; c.sign=null; }
-          bubble(pick(SAY[c.home?'woman':'man'][c.short?'part':'full']),...sayAt(c),1.8); if(c.mult<2) toast(c.short?`${got} بس من ${c.type.order} رغيف: بنص التمن 💵`:`سلّمت ${got} رغيف! 💵 +${got*LOAF_PRICE}`); else showCombo(c.mult);
+          { const L=SAY[c.home?'woman':'man'][c.short?'part':'full'], li=Math.floor(Math.random()*L.length); bubble(L[li],...sayAt(c),1.8);
+            if(!c.home) sayVoice(c.short?7:li); }   // men speak their line (recorded voice): m0-m6 full, m7 partial if(c.mult<2) toast(c.short?`${got} بس من ${c.type.order} رغيف: بنص التمن 💵`:`سلّمت ${got} رغيف! 💵 +${got*LOAF_PRICE}`); else showCombo(c.mult);
         } else if(!c.told){ c.told=true; toast('العيش اللي معاك مش مكفّي الزبون ده 😕'); }
       }
       if(state==='play' && ahead<-4){ c.state='missed'; if(c.sign){ const b=bubbles.find(b=>b.sp===c.sign); if(b) b.life=0; c.sign=null; } bubble('😞',...sayAt(c),1.5); }
