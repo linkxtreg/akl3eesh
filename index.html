@@ -2531,7 +2531,7 @@ function startAmbience(){ if(ambGain||ambLoading) return; ambLoading=true;
     const src=audio.createBufferSource(); src.buffer=buf; src.loop=true; src.loopStart=0.05; src.loopEnd=buf.duration-0.05;   // skip the encoder's padding at the seam
     ambGain=audio.createGain(); ambGain.gain.value=0; src.connect(ambGain); ambGain.connect(audio.destination); src.start(0,0.05+Math.random()*(buf.duration-0.2)); updateAmbience(); })   // a different spot in the loop every time
   .catch(()=>{ ambLoading=false; }); }
-function updateAmbience(){ if(!ambGain) return; const riding=state==='play' && !paused, v=!SET.sfx?0:riding?0.13:0.056;
+function updateAmbience(){ if(!ambGain) return; const riding=state==='play' && !paused, v=!SET.sfx?0:riding?0.117:0.05;
   if(Math.abs(ambGain.gain.value-v)>0.001) ambGain.gain.setTargetAtTime(v,audio.currentTime,0.4); }
 setInterval(updateAmbience,300);
 // shop sounds: a shop plays its own sound only while you pass it. It starts from a random point (never the
@@ -2579,11 +2579,11 @@ function hornSound(){
   loadBell();
   if(bellBuf){ try{ if(audio.state==='suspended') audio.resume();
     if(bellSrc){ try{ bellSrc.stop(); }catch(e){} }                 // a new ring cuts the last one short
-    const src=audio.createBufferSource(), g=audio.createGain(); g.gain.value=0.9; src.buffer=bellBuf; src.connect(g); g.connect(audio.destination); src.start(); bellSrc=src; return; }catch(e){} }
+    const src=audio.createBufferSource(), g=audio.createGain(); g.gain.value=0.81; src.buffer=bellBuf; src.connect(g); g.connect(audio.destination); src.start(); bellSrc=src; return; }catch(e){} }
   // bike bell: two quick metallic "ding"s (a few inharmonic partials, sharp strike, ringing decay)
   try{
     audio = audio || new (window.AudioContext||window.webkitAudioContext)();
-    const out=audio.createGain(); out.gain.value=0.22; out.connect(audio.destination);
+    const out=audio.createGain(); out.gain.value=0.2; out.connect(audio.destination);
     const strike=(t0)=>{
       for(const [f,amp,dec] of [[2650,1,0.9],[4120,0.55,0.6],[5980,0.3,0.35],[7900,0.15,0.2]]){
         const o=audio.createOscillator(), g=audio.createGain();
