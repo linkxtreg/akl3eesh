@@ -2537,8 +2537,8 @@ setInterval(updateAmbience,300);
 // shop sounds: a shop plays its own sound only while you pass it. It starts from a random point (never the
 // beginning), fades in as you approach, fades out as you leave, and stops once you're out of earshot.
 const SHOP_SFX=[
-  {file:'ui/sfx/ahwa-match.mp3', vol:0.25, range:28, near:5, where:()=>customers.filter(c=>c.kind==='ahwa').map(c=>c.rg.g.position)},   // the cafe TV: an old Zamalek-Ahly match
-  {file:'ui/sfx/ful-radio.mp3', vol:0.2, range:26, near:4, where:()=>customers.filter(c=>c.kind==='ful').map(c=>c.rg.g.position)},
+  {file:'ui/sfx/ahwa-match.mp3', vol:0.14, range:17, near:5, where:()=>customers.filter(c=>c.kind==='ahwa').map(c=>c.rg.g.position)},   // the cafe TV: an old Zamalek-Ahly match
+  {file:'ui/sfx/ful-radio.mp3', vol:0.12, range:15, near:4, where:()=>customers.filter(c=>c.kind==='ful').map(c=>c.rg.g.position)},
 ];
 const _shopP=new THREE.Vector3();
 function updateShopSounds(){
@@ -2553,9 +2553,9 @@ function updateShopSounds(){
       const src=audio.createBufferSource(), g=audio.createGain(); src.buffer=S.buf; src.loop=true; g.gain.value=0; src.connect(g); g.connect(audio.destination);
       src.start(0, S.buf.duration*(0.1+Math.random()*0.75)); S.src=src; S.g=g;
     }
-    if(S.src){ S.g.gain.setTargetAtTime(v,audio.currentTime,0.15);
+    if(S.src){ S.g.gain.setTargetAtTime(v,audio.currentTime,0.06);
       S.quietSince = v>0.001 ? 0 : (S.quietSince||audio.currentTime);
-      if(S.quietSince && audio.currentTime-S.quietSince>1){ try{ S.src.stop(); }catch(e){} S.src=null; S.g=null; S.quietSince=0; } }   // out of earshot: stop, next pass starts fresh
+      if(S.quietSince && audio.currentTime-S.quietSince>0.4){ try{ S.src.stop(); }catch(e){} S.src=null; S.g=null; S.quietSince=0; } }   // out of earshot: stop, next pass starts fresh
   }
 }
 setInterval(updateShopSounds,60);
@@ -2621,12 +2621,12 @@ function brakeSound(spd){   // rim brake: a scrape of grit (filtered noise) with
     const t=audio.currentTime+0.005, k=Math.min(1,spd/MAX_SPEED), dur=0.4+k*0.4;
     const s=audio.createBufferSource(), f=audio.createBiquadFilter(), g=audio.createGain(); s.buffer=noiseBuf();
     f.type='bandpass'; f.frequency.setValueAtTime(3200,t); f.frequency.exponentialRampToValueAtTime(1600,t+dur); f.Q.value=0.6;
-    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.55+k*0.35,t+0.03); g.gain.setValueAtTime(0.45+k*0.3,t+dur*0.5); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.275+k*0.175,t+0.03); g.gain.setValueAtTime(0.225+k*0.15,t+dur*0.5); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
     s.connect(f); f.connect(g); g.connect(audio.destination); s.start(t,Math.random()*0.5); s.stop(t+dur+0.02);
     const o=audio.createOscillator(), og=audio.createGain(), vib=audio.createOscillator(), vg=audio.createGain();
     o.type='triangle'; o.frequency.setValueAtTime(1900+k*500,t); o.frequency.linearRampToValueAtTime(1700+k*300,t+dur);
     vib.frequency.value=28; vg.gain.value=40; vib.connect(vg); vg.connect(o.frequency);
-    og.gain.setValueAtTime(0.0001,t); og.gain.exponentialRampToValueAtTime(0.05+k*0.1,t+0.04); og.gain.exponentialRampToValueAtTime(0.0001,t+dur*0.8);
+    og.gain.setValueAtTime(0.0001,t); og.gain.exponentialRampToValueAtTime(0.025+k*0.05,t+0.04); og.gain.exponentialRampToValueAtTime(0.0001,t+dur*0.8);
     o.connect(og); og.connect(audio.destination); o.start(t); vib.start(t); o.stop(t+dur); vib.stop(t+dur);
   }catch(e){}
 }
