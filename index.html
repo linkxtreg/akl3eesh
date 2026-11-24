@@ -2621,12 +2621,12 @@ function brakeSound(spd){   // rim brake: a scrape of grit (filtered noise) with
     const t=audio.currentTime+0.005, k=Math.min(1,spd/MAX_SPEED), dur=0.4+k*0.4;
     const s=audio.createBufferSource(), f=audio.createBiquadFilter(), g=audio.createGain(); s.buffer=noiseBuf();
     f.type='bandpass'; f.frequency.setValueAtTime(3200,t); f.frequency.exponentialRampToValueAtTime(1600,t+dur); f.Q.value=0.6;
-    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.103+k*0.066,t+0.03); g.gain.setValueAtTime(0.084+k*0.056,t+dur*0.5); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.077+k*0.05,t+0.03); g.gain.setValueAtTime(0.063+k*0.042,t+dur*0.5); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
     s.connect(f); f.connect(g); g.connect(audio.destination); s.start(t,Math.random()*0.5); s.stop(t+dur+0.02);
     const o=audio.createOscillator(), og=audio.createGain(), vib=audio.createOscillator(), vg=audio.createGain();
     o.type='triangle'; o.frequency.setValueAtTime(1900+k*500,t); o.frequency.linearRampToValueAtTime(1700+k*300,t+dur);
     vib.frequency.value=28; vg.gain.value=40; vib.connect(vg); vg.connect(o.frequency);
-    og.gain.setValueAtTime(0.0001,t); og.gain.exponentialRampToValueAtTime(0.0094+k*0.0188,t+0.04); og.gain.exponentialRampToValueAtTime(0.0001,t+dur*0.8);
+    og.gain.setValueAtTime(0.0001,t); og.gain.exponentialRampToValueAtTime(0.007+k*0.014,t+0.04); og.gain.exponentialRampToValueAtTime(0.0001,t+dur*0.8);
     o.connect(og); og.connect(audio.destination); o.start(t); vib.start(t); o.stop(t+dur); vib.stop(t+dur);
   }catch(e){}
 }
