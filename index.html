@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>اكل عيش</title>
 <style>
-  html,body{margin:0;height:100%;overflow:hidden;background:#e9dcc3;font-family:system-ui,sans-serif;touch-action:none;user-select:none}
+  html,body{margin:0;height:100%;overflow:hidden;background:#e9dcc3;font-family:system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-text-size-adjust:100%}
+  *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+  #stick,#honk,#stick *,#honk *{touch-action:none}
   #money{background:rgba(255,255,255,.7);padding:2px 10px;border-radius:12px;font-variant-numeric:tabular-nums;transition:transform .15s}
   #money.pop{transform:scale(1.3);color:#15803d}
   #timer{background:rgba(255,255,255,.7);padding:2px 10px;border-radius:12px;font-variant-numeric:tabular-nums}
@@ -17,7 +19,9 @@
   #bar i{display:block;height:100%;width:0;background:#c8742c;border-radius:3px}
   #harsh{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);width:160px;height:8px;background:rgba(0,0,0,.12);border-radius:4px;pointer-events:none}
   #harsh i{display:block;height:100%;width:0;background:#2a9d8f;border-radius:4px}
-  #msg{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:rgba(233,220,195,.85);color:#3a2a1a;padding:24px}
+  #msg{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:rgba(233,220,195,.85);color:#3a2a1a;padding:24px;z-index:8;overflow-y:auto;justify-content:safe center;box-sizing:border-box}
+  #msg.pause{padding-top:50px}
+  #msg.start,#msg.end{z-index:4}
   #msg{background:radial-gradient(circle at 50% 40%,rgba(255,244,222,.92),rgba(222,196,150,.92));font-family:'Baloo Bhaijaan 2','Geeza Pro',system-ui,sans-serif;gap:6px}
   #msg h1{margin:0;font-size:56px;font-weight:800;color:#ffd84d;-webkit-text-stroke:8px #3b2414;paint-order:stroke fill;text-shadow:0 6px 0 #3b2414;letter-spacing:1px}
   #msg .hero{width:150px;filter:drop-shadow(0 6px 0 #0002);margin-bottom:-6px}
@@ -4427,8 +4431,8 @@ if(!window.__SIM) import('./ui/kit.js').then(({counter})=>{
     const onStart=ui.msg.classList.contains('start'), want=state==='play'?'btn-pause':'btn-play';
     pz.style.visibility = (state==='play' && !paused) || onStart ? 'visible' : 'hidden';
     if(!pz.src.endsWith(want+'.png')){ pz.src='ui/art/icons/'+want+'.png'; pz.alt=pz.title= state==='play'?'إيقاف مؤقت':'العب'; }
-    if(PHONE){ const riding=state==='play'; document.getElementById('stick').style.display=riding?'block':'none'; document.getElementById('honk').style.visibility=riding?'visible':'hidden'; }
-    box.style.display = (ui.msg.style.display==='none' || ui.msg.classList.contains('start') || ui.msg.classList.contains('end') || ui.msg.classList.contains('pause')) ? 'grid' : 'none';     // hidden behind the start / end screens
+    if(PHONE){ const riding=state==='play' && !paused && ui.msg.style.display==='none'; document.getElementById('stick').style.display=riding?'block':'none'; document.getElementById('honk').style.visibility=riding?'visible':'hidden'; }
+    box.style.display = (ui.msg.style.display==='none' || ui.msg.classList.contains('start') || ui.msg.classList.contains('end')) ? 'grid' : 'none';     // hidden behind the start / end screens
   },100);
 }).catch(e=>console.error('HUD kit failed',e));
 window.__ride=(o)=>{ if(o.x!==undefined){ x=targetX=smoothX=o.x; } if(o.speed!==undefined) speed=o.speed; if(o.z!==undefined) z=o.z; return {x,z,speed}; };   // test hook
@@ -4491,6 +4495,16 @@ function buildSheet(){
 if(new URLSearchParams(location.search).has('sheet')) setTimeout(buildSheet,300);
 function loop(){ if(paused){ clock.getDelta(); renderer.render(scene,camera); requestAnimationFrame(loop); return; } if(SHEET){ renderer.render(SHEET.sc,SHEET.cam); requestAnimationFrame(loop); return; } const dt=Math.min(clock.getDelta(),1/30); step(dt); animateIdlers(clock.elapsedTime); renderer.render(scene,camera); requestAnimationFrame(loop); }
 buildStack(); loop();
+</script>
+<script>
+// phones: no pinch / double-tap zoom, no text selection popups on the controls
+document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
+document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
+let _lastTouch=0;
+document.addEventListener('touchend',e=>{ const t=Date.now(); if(t-_lastTouch<350) e.preventDefault(); _lastTouch=t; },{passive:false});
+for(const id of ['stick','honk']){ const el=document.getElementById(id); if(el) el.addEventListener('touchstart',e=>e.preventDefault(),{passive:false}); }
+document.addEventListener('selectstart',e=>e.preventDefault());
+document.addEventListener('contextmenu',e=>e.preventDefault());
 </script>
 <script>
 // local development only: reload when this file is saved
