@@ -2596,10 +2596,10 @@ function brakeSound(spd){   // subtle: pads rubbing the rim (soft filtered hiss)
     const t=audio.currentTime+0.005, k=Math.min(1,spd/MAX_SPEED), dur=0.35+k*0.35;
     const s=audio.createBufferSource(), f=audio.createBiquadFilter(), g=audio.createGain(); s.buffer=noiseBuf();
     f.type='bandpass'; f.frequency.setValueAtTime(2400,t); f.frequency.exponentialRampToValueAtTime(1300,t+dur); f.Q.value=1.2;
-    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.05+k*0.07,t+0.04); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.18+k*0.22,t+0.04); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
     s.connect(f); f.connect(g); g.connect(audio.destination); s.start(t,Math.random()*0.5); s.stop(t+dur+0.02);
-    if(k>0.4){ const o=audio.createOscillator(), og=audio.createGain(); o.type='sine'; o.frequency.setValueAtTime(2900,t); o.frequency.linearRampToValueAtTime(2600,t+dur*0.6);
-      og.gain.setValueAtTime(0.0001,t); og.gain.exponentialRampToValueAtTime(0.015*k,t+0.05); og.gain.exponentialRampToValueAtTime(0.0001,t+dur*0.6);
+    if(k>0.3){ const o=audio.createOscillator(), og=audio.createGain(); o.type='sine'; o.frequency.setValueAtTime(2900,t); o.frequency.linearRampToValueAtTime(2600,t+dur*0.6);
+      og.gain.setValueAtTime(0.0001,t); og.gain.exponentialRampToValueAtTime(0.05*k,t+0.05); og.gain.exponentialRampToValueAtTime(0.0001,t+dur*0.6);
       o.connect(og); og.connect(audio.destination); o.start(t); o.stop(t+dur); }
   }catch(e){}
 }
@@ -2858,7 +2858,7 @@ function step(dt){
       along = (pushT%PUSH_STROKE)<PUSH_STROKE*0.55 ? -3.2 : 0.7;    // shove, then roll while the foot swings forward
     } else if(keys.ArrowUp||touchUp) along = 3.0 * (1 - speed/MAX_SPEED);   // pedalling force fades near top speed
     else if(keys.ArrowDown||touchDown){                    // brakes: lever is squeezed progressively
-      if(brakeT===0 && speed>2 && !BOT) brakeSound(speed);
+      if(brakeT===0 && speed>1 && !BOT) brakeSound(speed);
       brakeT += dt;
       const nearBay = customers.some(c=>c.state==='wait' && c.z-z>-4 && c.z-z<25);   // a drop-off just ahead: brakes bite much harder
       along = -(3.0 + Math.min(1, brakeT/0.4)*3.5) * (nearBay ? 2 : 1);        // bites right away: 3 → 6.5 m/s² within 0.4 s
