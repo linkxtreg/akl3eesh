@@ -2537,9 +2537,13 @@ setInterval(updateAmbience,300);
 // shop sounds: a shop plays its own sound only while you pass it. It starts from a random point (never the
 // beginning), fades in as you approach, fades out as you leave, and stops once you're out of earshot.
 const SHOP_SFX=[
-  {file:'ui/sfx/ahwa-match.mp3', vol:0.14, range:17, near:5, where:()=>customers.filter(c=>c.kind==='ahwa').map(c=>c.rg.g.position)},   // the cafe TV: an old Zamalek-Ahly match
+  {file:'ui/sfx/ahwa-match.mp3', vol:0.14, range:17, near:5, where:()=>ahwaTV(0)},   // each cafe's TV shows one thing: an old Zamalek-Ahly match,
+  {file:'ui/sfx/ahwa-film1.mp3', vol:0.14, range:17, near:5, where:()=>ahwaTV(1)},   // a scene from اللعب مع الكبار,
+  {file:'ui/sfx/ahwa-film2.mp3', vol:0.14, range:17, near:5, where:()=>ahwaTV(2)},   // or عبد الفتاح القصري   // the cafe TV: an old Zamalek-Ahly match
   {file:'ui/sfx/ful-radio.mp3', vol:0.12, range:15, near:4, where:()=>customers.filter(c=>c.kind==='ful').map(c=>c.rg.g.position)},
 ];
+let _tvNext=Math.floor(Math.random()*3);
+const ahwaTV=n=>customers.filter(c=>c.kind==='ahwa' && ((c.tv??=(_tvNext++)%3)===n)).map(c=>c.rg.g.position);   // cafes take turns: match, film, film
 const _shopP=new THREE.Vector3();
 function updateShopSounds(){
   if(!audio || !ambGain) return;                                   // audio isn't unlocked yet
