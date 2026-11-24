@@ -249,7 +249,15 @@ scene.background = (()=>{   // clear blue overhead, fading into warm dust at str
   const c=document.createElement('canvas'); c.width=4; c.height=256; const g=c.getContext('2d'), gr=g.createLinearGradient(0,0,0,256);
   gr.addColorStop(0,'#6fa8dc'); gr.addColorStop(0.45,'#a9cbe6'); gr.addColorStop(0.75,'#e6d6bb'); gr.addColorStop(1,'#e9d7b6');
   g.fillStyle=gr; g.fillRect(0,0,4,256); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; })();
-scene.fog = new THREE.Fog(0xe7d5b4, 25, 90);
+scene.fog = new THREE.Fog(0xe7d5b4, 25, 84);
+// dust haze at the end of the draw distance: a wall of fog colour that follows the camera, solid at street level and
+// fading out above the rooftops, so the street dissolves into haze instead of ending in a hole of sky
+const hazeWall=(()=>{
+  const c=document.createElement('canvas'); c.width=4; c.height=128; const g=c.getContext('2d'), gr=g.createLinearGradient(0,128,0,0);
+  gr.addColorStop(0,'rgba(231,213,180,1)'); gr.addColorStop(0.45,'rgba(231,213,180,1)'); gr.addColorStop(0.75,'rgba(231,213,180,.55)'); gr.addColorStop(1,'rgba(231,213,180,0)');
+  g.fillStyle=gr; g.fillRect(0,0,4,128); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace;
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(90,36), new THREE.MeshBasicMaterial({map:t, transparent:true, depthWrite:false, fog:false}));
+  m.geometry.translate(0,18,0); m.rotation.y=Math.PI; m.renderOrder=-1; m.frustumCulled=false; scene.add(m); return m; })();
 const camera = new THREE.PerspectiveCamera(60,1,0.1,95);   // fog hides everything past 90 m, so don't draw it
 scene.add(new THREE.HemisphereLight(0xdcebf7,0x8a6b48,1.05));
 const sun = new THREE.DirectionalLight(0xffe0b0,1.55);   // low golden sun
@@ -1009,7 +1017,7 @@ const minaret=new THREE.Group();
   seg(2.2,2.4,22,11,sk); seg(2.9,2.9,0.8,22.4,dk); seg(1.7,1.9,12,28.8,sk); seg(2.3,2.3,0.7,35,dk); seg(1.2,1.3,7,38.9,sk);
   const dome=new THREE.Mesh(new THREE.SphereGeometry(1.3,10,8,0,Math.PI*2,0,Math.PI/2),sk); dome.position.y=42.4; minaret.add(dome);
   const tip=new THREE.Mesh(new THREE.ConeGeometry(0.25,2.5,6),dk); tip.position.y=44.6; minaret.add(tip);
-  minaret.position.set(6,-1.2,90); minaret.scale.setScalar(0.6); scene.add(minaret);   // same size on the skyline as 150 m away, but inside the draw distance
+  minaret.position.set(5.6,-1.1,84); minaret.scale.setScalar(0.56); scene.add(minaret);   // same size on the skyline as 150 m away, but inside the draw distance
 }
 // the finish: an open, marked delivery area (the street carries on behind it)
 const FINISH_LEN=14;
@@ -3107,7 +3115,8 @@ function step(dt){
   const camZ = player.position.z - 6, camX = player.position.x*0.6;
   camera.position.lerp(camTarget.set(camX,4.2,camZ), Math.min(1,dt*5));
   camera.lookAt(player.position.x*0.8, 1.4, player.position.z+6);
-  minaret.position.z = camera.position.z + 90;
+  minaret.position.z = camera.position.z + 84;
+  hazeWall.position.set(camera.position.x, -1, camera.position.z + 86);
   sun.position.set(player.position.x+6,14,player.position.z-4); sun.target.position.set(player.position.x,0,player.position.z);
 
   ui.loaves.textContent = `🫓 ${START_LOAVES}/${loaves.length}`;
