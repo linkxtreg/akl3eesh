@@ -2629,6 +2629,26 @@ function updateHooves(){
   _hoofT=now+0.62+Math.random()*0.06;
 }
 setInterval(updateHooves,50);
+// the bike rolling: tyres rumbling on the cobbles (a low filtered hiss that grows with speed), little bumps over
+// the stones, and the freewheel ticking when you coast
+let rollG=null, rollF=null, _tickT=0, _bumpT=0;
+function updateBikeSound(){
+  if(!audio || !ambGain) return;
+  if(!rollG){ const s=audio.createBufferSource(); s.buffer=noiseBuf(); s.loop=true; rollF=audio.createBiquadFilter(); rollF.type='lowpass'; rollF.frequency.value=300; rollF.Q.value=0.7;
+    rollG=audio.createGain(); rollG.gain.value=0; s.connect(rollF); rollF.connect(rollG); rollG.connect(audio.destination); s.start(); }
+  const riding=state==='play' && !paused && SET.sfx && !crashed, v=riding?Math.max(0,speed||0):0, k=Math.min(1,v/MAX_SPEED), now=audio.currentTime;
+  rollG.gain.setTargetAtTime(v>0.3 ? 0.03+k*0.09 : 0, now, 0.12);
+  rollF.frequency.setTargetAtTime(220+k*700, now, 0.2);
+  if(!riding || v<0.5) return;
+  if(now>_bumpT){ _bumpT=now+(0.9/Math.max(1,v))*rnd(0.6,1.4)*3;                 // a cobble now and then, more often when fast
+    thump(now+0.01,rnd(90,140),50,0.05,0.04+k*0.05); }
+  const coasting=!(keys.ArrowUp||touchUp);
+  if(coasting && now>_tickT){ _tickT=now+Math.max(0.035,0.3/Math.max(1,v));       // freewheel: tick-tick-tick, faster with speed
+    const t=now+0.005, o=audio.createBufferSource(), f=audio.createBiquadFilter(), g=audio.createGain(); o.buffer=noiseBuf();
+    f.type='bandpass'; f.frequency.value=5200; f.Q.value=8; g.gain.setValueAtTime(0.02+k*0.015,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.015);
+    o.connect(f); f.connect(g); g.connect(audio.destination); o.start(t,Math.random()*0.5); o.stop(t+0.02); }
+}
+setInterval(updateBikeSound,30);
 // pigeons taking off: a burst of wing flaps, once per flock (not per bird), softer when far
 let _flapT=0;
 function flutter(b){
