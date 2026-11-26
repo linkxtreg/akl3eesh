@@ -1354,7 +1354,7 @@ const LEVELS=[
   {n:3, goal:70,  people:1, cats:1, carts:1, balcony:1, dogs:1},
   {n:4, goal:80,  people:1, cats:1, carts:1, balcony:1, dogs:1, tuktuk:1},
   {n:5, goal:90,  people:1, cats:1, carts:1, balcony:1, dogs:1, tuktuk:1, school:1, bikes:1},
-  {n:6, goal:100, people:1, cats:1, carts:1, balcony:1, dogs:1, tuktuk:1, school:1, bikes:1, alley:1},
+  {n:6, goal:100, people:1, cats:1, carts:1, balcony:1, dogs:1, tuktuk:1, school:1, bikes:1, alley:1, busy:1.6},   // busy: extra traffic on top
 ];
 let LVN=1; const LV=()=>LEVELS[LVN-1];
 const LV_KIND={walkerAhead:'people',walkerToward:'people',stander:'people',crosser:'people',cat:'cats',donkeyCart:'carts',parkedCart:'carts',
@@ -1514,7 +1514,7 @@ function directorUpdate(){
     dr.at=dr.lastEnd??z;
     dr.lane=Math.max(-dlim(0.5)+0.5,Math.min(dlim(0.5)-0.5,choice.build(z0)));
     dr.last=choice.name; dr.beat++; dr.lastEnd=z0+choice.len;
-    dr.nextZ=z0+choice.len+(TUNE.challengeGap-T*(TUNE.challengeGap-TUNE.challengeGapHard))*vEst();          // same reaction time whatever your speed
+    dr.nextZ=z0+choice.len+(TUNE.challengeGap-T*(TUNE.challengeGap-TUNE.challengeGapHard))*vEst()/(LV().busy||1);   // busy levels: challenges come closer together          // same reaction time whatever your speed
     dr.log.push(`${Math.round(z0)}m ${choice.name} (tension ${T.toFixed(2)})`);
   }
 }
@@ -1647,6 +1647,10 @@ function spawnObstacles(){
   // families next, so there's always room for them: one early, then one every 55-75 m
   for(let z=30; z<SHOP_Z-20; z+=tr(TUNE.familyEvery)){
     for(let a=0;a<30 && !spawnOne(z+(a?rnd(-9,9):0),'family');a++);
+  }
+  if(LV().busy){                                         // busy levels: more traffic everywhere, roughly one extra thing every 20 m
+    const KINDS=['walkerAhead','walkerToward','tuktukAhead','tuktukToward','motorbike','cyclist','donkeyCart','crate','parkedCart','walkerToward'];
+    for(let zz=28; zz<SHOP_Z-20; zz+=rnd(16,26)) for(let a=0;a<6 && !spawnOne(zz+(a?rnd(-3,3):0),pick(KINDS));a++);
   }
   stallsNow=stalls; edgeXNow=edgeX;                 // the director places street obstacles live (see director)
   // chaos out of the alleys: people, running kids, groups, cats and the odd motorbike shoot out,
