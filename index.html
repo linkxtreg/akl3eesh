@@ -246,7 +246,7 @@ const SPILL_PER_LOAF = TUNE.spillPerLoaf;
 const LOWGFX = matchMedia("(pointer:coarse)").matches;
 const renderer = new THREE.WebGLRenderer({antialias:!LOWGFX, powerPreference:"high-performance"});
 renderer.setPixelRatio(LOWGFX?1:Math.min(devicePixelRatio,1.5));
-renderer.shadowMap.enabled = !LOWGFX;
+renderer.shadowMap.enabled = false;   // real shadows doubled the drawing work: soft blob shadows under moving things instead (see drawBlobs)
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
 scene.background = (()=>{   // clear blue overhead, fading into warm dust at street level
@@ -308,6 +308,13 @@ function skinify(g){
   g.updateMatrixWorld(true); sm.bind(new THREE.Skeleton(bones), sm.matrixWorld);
   sm.boundingSphere=new THREE.Sphere(new THREE.Vector3(0,0.9,0),1.7);   // generous fixed bounds: limbs swing, but a person never leaves this ball
   sm.boundingBox=new THREE.Box3(new THREE.Vector3(-1,-0.2,-1),new THREE.Vector3(1,2.2,1));
+  return sm;
+}
+// merge a parent's direct child meshes that share a material into one mesh per material (1 draw call each)
+function batchChildren(parent, test){
+  const groups=new Map();
+  for(const m of [...parent.children]) if(m.isMesh && !m.isSkinnedMesh && m.children.length===0 && test(m)){ m.updateMatrix(); const g=m.geometry.clone().applyMatrix4(m.matrix); (groups.get(m.material)||groups.set(m.material,[]).get(m.material)).push(g); parent.remove(m); }
+  for(const [mat,gs] of groups){ const mm=new THREE.Mesh(mergeGeometries(gs),mat); parent.add(mm); gs.forEach(g=>g.dispose()); }
 }
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -1116,7 +1123,8 @@ const bikeRig = {};
   bikeRig.ring.add(mergeParts([part(new THREE.TorusGeometry(0.1,0.015,4,14),0,0,0,steel,0,Math.PI/2,0),B(0.015,0.19,0.02,0,0,0,steel),B(0.015,0.02,0.19,0,0,0,steel)]));
   heroBike.add(bikeRig.ring);
   const linkGeo=new THREE.BoxGeometry(0.02,0.02,0.055), linkMat=mat(0x3a3a3a);
-  bikeRig.links=Array.from({length:18},()=>{ const m=new THREE.Mesh(linkGeo,linkMat); heroBike.add(m); return m; });
+  bikeRig.linkIM=new THREE.InstancedMesh(linkGeo,linkMat,18); bikeRig.linkIM.frustumCulled=false; heroBike.add(bikeRig.linkIM);   // 18 chain links, 1 draw call
+  bikeRig.links=Array.from({length:18},()=>new THREE.Object3D());
 
   // rider: pelvis > spine > chest > (neck > head, two arms of shoulder > elbow > wrist > fingers)
   //        legs are hip > knee > ankle (see makePedaller)
@@ -1663,6 +1671,41 @@ const pigeonGeo=(()=>{ const g=mergeGeometries([ B(0.12,0.11,0.24,0,0.11,0,0x8d8
 const wingGeo=(()=>{ const g=new THREE.BoxGeometry(0.22,0.02,0.14); g.translate(0.11,0,0); return g; })();
 const wingMat=new THREE.MeshLambertMaterial({color:0x7a7a88});
 let pigeons=[];
+// all pigeons are drawn as two instanced meshes (bodies, wings): the per-bird groups still animate, but only as invisible proxies
+const PIG_MAX=600, pigBodyIM=new THREE.InstancedMesh(pigeonGeo,modelMat,PIG_MAX), pigWingIM=new THREE.InstancedMesh(wingGeo,wingMat,PIG_MAX*2);
+pigBodyIM.frustumCulled=pigWingIM.frustumCulled=false; pigBodyIM.count=pigWingIM.count=0; scene.add(pigBodyIM,pigWingIM);
+// blob shadows: one soft dark ellipse on the ground under the rider and everything that moves, all in ONE draw call
+const blobTex=(()=>{ const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d'), gr=g.createRadialGradient(32,32,2,32,32,31);
+  gr.addColorStop(0,'rgba(0,0,0,.42)'); gr.addColorStop(0.6,'rgba(0,0,0,.22)'); gr.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64); return new THREE.CanvasTexture(c); })();
+const BLOB_MAX=400, blobIM=(()=>{ const geo=new THREE.PlaneGeometry(1,1); geo.rotateX(-Math.PI/2);
+  const m=new THREE.InstancedMesh(geo,new THREE.MeshBasicMaterial({map:blobTex,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}),BLOB_MAX);
+  m.frustumCulled=false; m.count=0; m.renderOrder=1; scene.add(m); return m; })();
+const _bm=new THREE.Matrix4(), _bq=new THREE.Quaternion(), _bs=new THREE.Vector3(), _bp=new THREE.Vector3(), _by=new THREE.Vector3(0,1,0);
+function blobAt(n,px,pz,sx,sz,ry){ _bp.set(px,0.025,pz); _bq.setFromAxisAngle(_by,ry||0); _bs.set(sx,1,sz); _bm.compose(_bp,_bq,_bs); blobIM.setMatrixAt(n,_bm); }
+function drawBlobs(){
+  if(z===undefined){ blobIM.count=0; return; }
+  let n=0;
+  if(!crashed) blobAt(n++, player.position.x, player.position.z+0.05, 0.75, 2.0, 0);
+  for(const o of obstacles){
+    if(n>=BLOB_MAX) break; if(o.dead || o.kind==='stall' || !o.mesh || !o.mesh.visible || !o.mesh.parent) continue;
+    const p=o.mesh.position, dz=p.z-z; if(dz<-6 || dz>70) continue;
+    const w=Math.max(0.45,(o.hx||o.w/2||0.25)*2.3), d=Math.max(0.45,(o.hz||o.d/2||0.25)*2.3);
+    blobAt(n++, p.x, p.z, w, d, o.mesh.rotation.y);
+  }
+  for(const c of customers){ if(n>=BLOB_MAX) break; if(c.home || !c.rg.g.visible) continue; const p=c.rg.g.position, dz=p.z-z; if(dz<-6||dz>70) continue; blobAt(n++, p.x, p.z, 0.6, 0.6, 0); }
+  blobIM.count=n; blobIM.instanceMatrix.needsUpdate=true;
+}
+function drawPigeons(){
+  let nb=0, nw=0;
+  for(const b of pigeons){
+    if(b.body.visible){ b.body.visible=b.wl.visible=b.wr.visible=false; }
+    let vis=true; for(let p=b.g;p;p=p.parent) if(!p.visible){ vis=false; break; }
+    if(!vis || !b.g.parent || nb>=PIG_MAX) continue;
+    b.g.updateMatrixWorld(true);
+    pigBodyIM.setMatrixAt(nb++,b.body.matrixWorld); pigWingIM.setMatrixAt(nw++,b.wl.matrixWorld); pigWingIM.setMatrixAt(nw++,b.wr.matrixWorld);
+  }
+  pigBodyIM.count=nb; pigWingIM.count=nw; pigBodyIM.instanceMatrix.needsUpdate=true; pigWingIM.instanceMatrix.needsUpdate=true;
+}
 function spawnPigeons(){
   for(const b of pigeons) scene.remove(b.g); pigeons=[];
   for(let fz=18+Math.random()*15; fz<SHOP_Z-10; fz+=rnd(18,38)){
@@ -2774,6 +2817,8 @@ function applyRewards(){
   }
 }
 applyRewards();
+// the rider and the bike: ~60 jointed pieces -> one skinned mesh each (joints, wheels, steering and the crash tumble still move them)
+if(!window.__SIM && !new URLSearchParams(location.search).has('sheet')) for(const g of [heroBody,heroBike]){ const sm=skinify(g); if(sm) sm.frustumCulled=false; }
 function openAchv(){
   if(paused) return;
   clearTimeout(endShowT); const from = state==='play' ? 'ride' : (ui.msg.classList.contains('end')?'end':'menu'), saved=ui.msg.innerHTML, savedCls=ui.msg.className;
@@ -3402,7 +3447,9 @@ function placeChain(){
     const ry=REAR[0]+(top?0.055:-0.055), fy=BB[0]+(top?0.1:-0.1);
     m.position.set(0.085, ry+(fy-ry)*t, REAR[1]+(BB[1]-REAR[1])*t);
     m.rotation.x=-Math.atan2(fy-ry,BB[1]-REAR[1]);
+    m.updateMatrix(); bikeRig.linkIM.setMatrixAt(i,m.matrix);
   });
+  bikeRig.linkIM.instanceMatrix.needsUpdate=true;
 }
 const ikT=new THREE.Vector3(), ikD=new THREE.Vector3(), ikP=new THREE.Vector3(), ikE=new THREE.Vector3(), DOWN=new THREE.Vector3(0,-1,0);
 const ikQ=new THREE.Quaternion();
@@ -4133,6 +4180,7 @@ function addRequestMarker(c){
       }
     }
     root.add(mergeParts(p));
+    batchChildren(root, m=>c.bulbMats.includes(m.material));   // 35 bulbs -> 2 meshes (they blink in two sets)
 
     // waiter's apron and the tin tray he bangs over his head
     c.rg.g.add(mergeParts([ B(0.36,0.62,0.03,0,0.82,0.16,0x1d3557), B(0.14,0.05,0.03,0,1.48,0.13,0x222222) ]));
@@ -4220,6 +4268,7 @@ function addRequestMarker(c){
     const bulb=(bx,by)=>{ const m=new THREE.Mesh(geo,c.bulbMats[i++%2]); m.position.set(bx,by,-0.06); c.card.add(m); };
     for(let k=0;k<=7;k++){ bulb(-0.98+k*0.28,-0.1); bulb(0.98-k*0.28,-1.57); }
     for(let k=1;k<5;k++){ bulb(-0.98,-0.1-k*0.294); bulb(0.98,-0.1-k*0.294); }
+    batchChildren(c.card, m=>c.bulbMats.includes(m.material));
   }
   if(c.drop) c.contents=Array.from({length:c.type.order},(_,i)=>{
     const m=new THREE.Mesh(loafGeo,loafMat); m.position.set(0,0.05+Math.floor(i/2)*0.04,(i%2-0.5)*0.19); m.visible=false; c.drop.add(m); return m;
@@ -4644,7 +4693,7 @@ function buildSheet(){
   SHEET={sc,cam}; window.__sheetImage=(w=3200,h=1900)=>{ renderer.setPixelRatio(1); renderer.setSize(w,h,false); const a0=w/h, hh=Math.max(D*0.3+2, W/2/a0); cam.left=-hh*a0; cam.right=hh*a0; cam.top=hh; cam.bottom=-hh; cam.updateProjectionMatrix(); renderer.render(sc,cam); return renderer.domElement.toDataURL('image/png'); };
 }
 if(new URLSearchParams(location.search).has('sheet')) setTimeout(buildSheet,300);
-function loop(){ if(paused){ clock.getDelta(); renderer.render(scene,camera); requestAnimationFrame(loop); return; } if(SHEET){ renderer.render(SHEET.sc,SHEET.cam); requestAnimationFrame(loop); return; } const dt=Math.min(clock.getDelta(),1/30); step(dt); animateIdlers(clock.elapsedTime); renderer.render(scene,camera); requestAnimationFrame(loop); }
+function loop(){ if(paused){ clock.getDelta(); renderer.render(scene,camera); requestAnimationFrame(loop); return; } if(SHEET){ renderer.render(SHEET.sc,SHEET.cam); requestAnimationFrame(loop); return; } const dt=Math.min(clock.getDelta(),1/30); step(dt); animateIdlers(clock.elapsedTime); drawPigeons(); drawBlobs(); renderer.render(scene,camera); requestAnimationFrame(loop); }
 buildStack(); loop();
 </script>
 <script>
