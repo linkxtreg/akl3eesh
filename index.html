@@ -4624,7 +4624,7 @@ if(!window.__SIM) import('./ui/kit.js').then(({counter})=>{
     const gs=Math.ceil(Math.max(0,ui.msg.classList.contains('start')?TIME_LIMIT:timeLeft)*TIME_SCALE), tt=`${Math.floor(gs/60)}:${String(gs%60).padStart(2,'0')}`;
     if(state==='play') checkAchv();
     const key=`${servedLoaves}|${loaves.length}|${tt}|${Math.round(earned)}|${state}|${combo}|${paused}|${ui.msg.className}`; if(key===last) return; last=key;
-    b.setText(`${servedLoaves} / ${loaves.length+servedLoaves}`);   // delivered / still deliverable (dropped loaves come off the total) t.setText(tt); c.setText(String(Math.round(earned)));
+    b.setText(String(servedLoaves));   // delivered / still deliverable (dropped loaves come off the total) t.setText(tt); c.setText(String(Math.round(earned)));
     if(k.dataset.v!==String(combo)){ const up=combo>(+k.dataset.v||0); k.dataset.v=combo; k.setText('×'+combo); k.style.filter=combo?'':'grayscale(.7) opacity(.75)';
       if(up){ k.style.transform='scale(1.25)'; setTimeout(()=>k.style.transform='',160); } }
     t.classList.toggle('low', gs<=10 && state==='play');
