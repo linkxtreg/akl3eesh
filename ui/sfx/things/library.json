@@ -1,0 +1,87 @@
+{
+ "balcony-woman": [
+  "balcony-woman-1.mp3",
+  "balcony-woman-2.mp3",
+  "balcony-woman-3.mp3"
+ ],
+ "car": [
+  "car-1.mp3",
+  "car-2.mp3",
+  "car-3.mp3"
+ ],
+ "cat": [
+  "cat-1.mp3",
+  "cat-2.mp3",
+  "cat-3.mp3"
+ ],
+ "crosser": [
+  "crosser-1.mp3",
+  "crosser-2.mp3",
+  "crosser-3.mp3"
+ ],
+ "cyclist": [
+  "cyclist-1.mp3",
+  "cyclist-2.mp3",
+  "cyclist-3.mp3"
+ ],
+ "dog": [
+  "dog-1.mp3",
+  "dog-2.mp3",
+  "dog-3.mp3"
+ ],
+ "donkey-cart": [
+  "donkey-cart-1.mp3",
+  "donkey-cart-2.mp3",
+  "donkey-cart-3.mp3"
+ ],
+ "family": [
+  "family-1.mp3",
+  "family-2.mp3",
+  "family-3.mp3"
+ ],
+ "kids-running": [
+  "kids-running-1.mp3",
+  "kids-running-2.mp3",
+  "kids-running-3.mp3"
+ ],
+ "motorbike": [
+  "motorbike-1.mp3",
+  "motorbike-2.mp3",
+  "motorbike-3.mp3"
+ ],
+ "pigeons": [
+  "pigeons-1.mp3",
+  "pigeons-2.mp3",
+  "pigeons-3.mp3"
+ ],
+ "school-kids": [
+  "school-kids-1.mp3",
+  "school-kids-2.mp3",
+  "school-kids-3.mp3"
+ ],
+ "shopkeeper": [
+  "shopkeeper-1.mp3",
+  "shopkeeper-2.mp3",
+  "shopkeeper-3.mp3"
+ ],
+ "stall-vendor": [
+  "stall-vendor-1.mp3",
+  "stall-vendor-2.mp3",
+  "stall-vendor-3.mp3"
+ ],
+ "stander": [
+  "stander-1.mp3",
+  "stander-2.mp3",
+  "stander-3.mp3"
+ ],
+ "tuktuk": [
+  "tuktuk-1.mp3",
+  "tuktuk-2.mp3",
+  "tuktuk-3.mp3"
+ ],
+ "walker": [
+  "walker-1.mp3",
+  "walker-2.mp3",
+  "walker-3.mp3"
+ ]
+}
