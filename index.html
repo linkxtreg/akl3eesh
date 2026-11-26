@@ -2586,6 +2586,24 @@ const SHOP_SFX=[
   {file:'ui/sfx/shop1.mp3', vol:0.12, range:30, near:4, where:()=>shopRadio(0)},   // shop radios: شعبان عبد الرحيم,
   {file:'ui/sfx/shop2.mp3', vol:0.12, range:30, near:4, where:()=>shopRadio(1)},   // فاروق شوشة - لغتنا الجميلة,
   {file:'ui/sfx/shop3.mp3', vol:0.12, range:30, near:4, where:()=>shopRadio(2)},   // عدوية - زحمة يا دنيا زحمة
+  // ---- everything else that lives in the street (sample sounds in ui/sfx/things/: replace a file to change its sound) ----
+  {file:'ui/sfx/things/tuktuk.mp3',       vol:0.12, range:28, near:3, where:()=>OBSK('tuktukAhead','tuktukToward')},
+  {file:'ui/sfx/things/motorbike.mp3',    vol:0.12, range:30, near:3, where:()=>OBSK('motorbike')},
+  {file:'ui/sfx/things/donkey-cart.mp3',  vol:0.12, range:22, near:3, where:()=>OBSK('donkeyCart')},
+  {file:'ui/sfx/things/cyclist.mp3',      vol:0.08, range:14, near:2, where:()=>OBSK('cyclist')},
+  {file:'ui/sfx/things/car.mp3',          vol:0.06, range:12, near:2, where:()=>OBSK('parkedCar')},
+  {file:'ui/sfx/things/walker.mp3',       vol:0.08, range:10, near:1.5, where:()=>OBSK('walkerAhead','walkerToward')},
+  {file:'ui/sfx/things/crosser.mp3',      vol:0.08, range:12, near:1.5, where:()=>OBSK('crosser')},
+  {file:'ui/sfx/things/stander.mp3',      vol:0.07, range:10, near:1.5, where:()=>OBSK('stander')},
+  {file:'ui/sfx/things/family.mp3',       vol:0.09, range:14, near:2, where:()=>OBSK('family:adult')},
+  {file:'ui/sfx/things/school-kids.mp3',  vol:0.10, range:16, near:2, where:()=>OBSK('family:school')},
+  {file:'ui/sfx/things/kids-running.mp3', vol:0.10, range:16, near:2, where:()=>chasers.map(k=>k.o.mesh.position)},
+  {file:'ui/sfx/things/dog.mp3',          vol:0.10, range:20, near:2, where:()=>dogs.map(d=>d.g.position)},
+  {file:'ui/sfx/things/cat.mp3',          vol:0.08, range:12, near:1.5, where:()=>OBSK('cat').concat(perchCats.filter(c=>c.state!=='down').map(c=>c.mesh.position))},
+  {file:'ui/sfx/things/pigeons.mp3',      vol:0.07, range:14, near:2, where:()=>pigeons.filter(b=>b.state===0||b.state===3).map(b=>b.g.position)},
+  {file:'ui/sfx/things/balcony-woman.mp3',vol:0.10, range:22, near:4, where:()=>customers.filter(c=>c.home && c.state==='wait').map(c=>c.rg.g.position)},
+  {file:'ui/sfx/things/shopkeeper.mp3',   vol:0.07, range:12, near:2, where:()=>IDLERS.filter(d=>!d.hidden && d.rg.g.visible).map(d=>d.rg.g.position)},
+  {file:'ui/sfx/things/stall-vendor.mp3', vol:0.08, range:16, near:2, where:()=>OBSK('stall')},
   {file:'ui/sfx/ful-radio.mp3', vol:0.12, range:30, near:4, where:()=>customers.filter(c=>c.kind==='ful').map(c=>c.rg.g.position)},
 ];
 let _tvNext=Math.floor(Math.random()*3);
@@ -2596,13 +2614,19 @@ function dealShopRadios(){ shopPool=[0,1,2].sort(()=>Math.random()-0.5); }
 dealShopRadios();
 const shopRadio=n=>customers.filter(c=>c.kind==='shop' && ((c.radio===undefined ? (c.radio=shopPool.length?shopPool.shift():-1) : c.radio)===n)).map(c=>c.rg.g.position);
 const _shopP=new THREE.Vector3();
+// one pass over the street traffic per tick, grouped by kind, so many sound types cost almost nothing
+let _obsByKind=null;
+function OBSK(...kinds){ const out=[]; for(const k of kinds) if(_obsByKind[k]) out.push(..._obsByKind[k]); return out; }
+function groupObstacles(){ const m={}; for(const o of obstacles){ if(o.dead || !o.mesh) continue; const p=o.mesh.position; if(Math.abs(p.z-z)>40) continue;
+  const k=o.kind==='family' ? (o.school&&o.school!=='friends'?'family:school':'family:adult') : o.kind; (m[k]||(m[k]=[])).push(p); } _obsByKind=m; }
 function updateShopSounds(){
   if(!audio || !ambGain) return;                                   // audio isn't unlocked yet
+  const live=state==='play' && !paused && SET.sfx && z!==undefined;
+  if(live) groupObstacles();
   for(const S of SHOP_SFX){
-    if(!S.buf && !S.loading){ S.loading=true; fetch(S.file).then(r=>r.arrayBuffer()).then(b=>audio.decodeAudioData(b)).then(d=>S.buf=d).catch(()=>S.loading=false); }
-    if(!S.buf) continue;
     let d=Infinity;
-    if(state==='play' && !paused && SET.sfx) for(const p of S.where()){ const dd=Math.hypot(p.x-x,(p.z-z)*1); if(dd<d) d=dd; }
+    if(live) for(const p of S.where()){ const dd=Math.hypot(p.x-x,p.z-z); if(dd<d) d=dd; }
+    if(!S.buf){ if(!S.loading && d<S.range+25){ S.loading=true; fetch(S.file).then(r=>r.arrayBuffer()).then(b=>audio.decodeAudioData(b)).then(b=>S.buf=b).catch(()=>S.loading=false); } continue; }   // load a sound only when its thing is near
     const v = d>=S.range ? 0 : S.vol*Math.min(1,Math.pow((S.range-d)/(S.range-S.near),1.2));
     if(v>0.001 && !S.src){                                         // coming into earshot: start somewhere in the middle
       const src=audio.createBufferSource(), g=audio.createGain(); src.buffer=S.buf; src.loop=true; g.gain.value=0; src.connect(g); g.connect(audio.destination);
@@ -2628,7 +2652,7 @@ function updateHooves(){
   clop(now+0.01,vol,_hoofI%2); clop(now+0.13,vol*0.8,(_hoofI+1)%2);                 // clip-clop
   _hoofT=now+0.62+Math.random()*0.06;
 }
-setInterval(updateHooves,50);
+// (donkey hooves now come from ui/sfx/things/donkey-cart.mp3)
 // the bike rolling: a recorded loop of wheels, chain and crank creak; louder and a little faster the faster you ride,
 // silent when you stop. Small cobble bumps on top.
 let rollG=null, rollSrc=null, rollLoading=false, _bumpT=0;
