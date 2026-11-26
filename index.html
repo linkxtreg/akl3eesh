@@ -3429,7 +3429,7 @@ function reactHit(o, impact, big){   // cartoonish over-reaction: things fly, sp
   o.knock={t:0, dur:person&&big?3.6:person?1.3:heavy?1.6:2.4, big, person, heavy, side, k,
     vx:side*push*0.8, vz:push, vy:person?(big?5.5:2.2)*k:heavy?(big?2.2:1)*k:(big?5:2.5)*k, y:0,
     spin:(Math.random()<.5?-1:1)*(person?(big?9:3):heavy?1.5:12)*k, ry:0, roll:0,
-    fall:person&&big, saved:{vx:o.vx||0, vz:o.vz||0}, y0:p.y};
+    fall:person&&big, saved:{vx:o.vx||0, vz:o.vz||0}, y0:p.y, ry0:o.mesh.rotation.y};
   if(person||!heavy){ o.vx=0; o.vz=0; if(o.sv){ o.sv.x=0; o.sv.z=0; } }
   if(person) bubble(big?pick(['آآآه!','يا لهوي!','يا ساتر!']):pick(['!','إيه ده!','حاسب!']), o.mesh, 2.1, 1.3);
 }
@@ -3451,7 +3451,8 @@ function updateKnocks(dt){
       const w=Math.exp(-u*3)*Math.sin(K.t*24)*(K.heavy?0.16:0.4)*K.k; m.rotation.z=w*K.side+(K.heavy?0:Math.sin(K.roll)*0.25*(1-u)); m.rotation.x=w*0.6;
       if(!K.heavy) m.rotation.y+=K.spin*dt;
     }
-    if(u>=1){ m.rotation.x=0; m.rotation.z=0; m.position.y=K.y0; if(K.person||!K.heavy){ o.vx=K.saved.vx; o.vz=K.saved.vz; } o.knock=null; }
+    if(K.person && u>0.85) m.rotation.y+=(K.ry0-m.rotation.y)*Math.min(1,dt*10);   // turn back to where they were facing
+    if(u>=1){ m.rotation.x=0; m.rotation.z=0; m.position.y=K.y0; if(K.person) m.rotation.y=K.ry0; if(K.person||!K.heavy){ o.vx=K.saved.vx; o.vz=K.saved.vz; } o.knock=null; }
   }
 }
 function hitObstacle(o){
