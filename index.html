@@ -3421,30 +3421,37 @@ function keepClearOfStoppedBike(dt){
 // what you hit reacts: people stagger (or get knocked flat in a crash and get up again), vehicles and carts jolt and
 // slide, crates and stalls wobble. It's an offset on top of their own movement, so nothing else needs to know.
 const PEOPLE_K=new Set(['walkerAhead','walkerToward','stander','crosser','family','kid']);
-function reactHit(o, impact, big){
+function reactHit(o, impact, big){   // cartoonish over-reaction: things fly, spin, bounce and wobble far more than real life
   if(!o.mesh || o.kind==='cat') return;
   const p=o.mesh.position, side=Math.sign(p.x-x)||(Math.random()<.5?-1:1), person=PEOPLE_K.has(o.kind) && o.variant!=='motorbike';
-  const k=Math.min(1.5,impact/CRASH_SPEED), heavy=['parkedCar','tuktukAhead','tuktukToward','donkeyCart','stall'].includes(o.kind);
-  const push=person?(big?2.6:1.2)*k:heavy?0.25*k:(big?1.4:0.6)*k;
-  o.knock={t:0, dur:person&&big?3.2:person?0.9:1.0, big, person, heavy,
-    vx:side*push*0.6, vz:push, rx:0, rz:0, fall:person&&big, side, k,
-    saved:{vx:o.vx||0, vz:o.vz||0}};
-  if(person||!heavy){ o.vx=0; o.vz=0; if(o.sv){ o.sv.x=0; o.sv.z=0; } }                    // they stop in their tracks
-  if(person) bubble(big?'آآه!':'!', o.mesh, 2.1, 1.1);
+  const k=Math.min(1.6,0.5+impact/CRASH_SPEED), heavy=['parkedCar','tuktukAhead','tuktukToward','donkeyCart','stall'].includes(o.kind);
+  const push=person?(big?7:3)*k:heavy?(big?1.6:0.8)*k:(big?6:3)*k;
+  o.knock={t:0, dur:person&&big?3.6:person?1.3:heavy?1.6:2.4, big, person, heavy, side, k,
+    vx:side*push*0.8, vz:push, vy:person?(big?5.5:2.2)*k:heavy?(big?2.2:1)*k:(big?5:2.5)*k, y:0,
+    spin:(Math.random()<.5?-1:1)*(person?(big?9:3):heavy?1.5:12)*k, ry:0, roll:0,
+    fall:person&&big, saved:{vx:o.vx||0, vz:o.vz||0}, y0:p.y};
+  if(person||!heavy){ o.vx=0; o.vz=0; if(o.sv){ o.sv.x=0; o.sv.z=0; } }
+  if(person) bubble(big?pick(['آآآه!','يا لهوي!','يا ساتر!']):pick(['!','إيه ده!','حاسب!']), o.mesh, 2.1, 1.3);
 }
 function updateKnocks(dt){
   for(const o of obstacles){ const K=o.knock; if(!K) continue; K.t+=dt;
     const m=o.mesh, u=K.t/K.dur;
-    m.position.x+=K.vx*dt; m.position.z+=K.vz*dt; const damp=Math.pow(K.person?0.02:0.005,dt); K.vx*=damp; K.vz*=damp;   // shoved, sliding to a stop
-    if(K.fall){                                   // knocked flat, lies there, then gets back up
-      const down = u<0.12 ? u/0.12 : u<0.7 ? 1 : 1-(u-0.7)/0.3;
-      m.rotation.x=1.45*down*0.9; m.rotation.z=-K.side*0.35*down;
-    } else if(K.person){                          // stagger: lean away, then catch their balance
-      const w=Math.sin(Math.min(1,u)*Math.PI)*0.4*K.k; m.rotation.x=w*0.8; m.rotation.z=-K.side*w;
-    } else {                                      // vehicles, carts, crates, stalls: a jolt that wobbles out
-      const w=Math.exp(-u*4)*Math.sin(K.t*22)*(K.heavy?0.05:0.14)*K.k*(K.big?1.6:1); m.rotation.z=w*K.side; m.rotation.x=w*0.5;
+    m.position.x+=K.vx*dt; m.position.z+=K.vz*dt;
+    K.vy-=18*dt; K.y+=K.vy*dt;                                         // up in the air, and down with a bounce
+    if(K.y<0){ K.y=0; if(K.vy<-1.5){ K.vy*=-0.45; K.vx*=0.6; K.vz*=0.6; K.spin*=0.6; } else K.vy=0; }
+    const onGround=K.y===0 && K.vy===0, damp=Math.pow(onGround?0.03:0.6,dt); K.vx*=damp; K.vz*=damp;
+    m.position.y=K.y0+K.y;
+    K.roll+=K.spin*dt; K.spin*=Math.pow(onGround?0.05:0.7,dt);
+    if(K.fall){                                   // flung, spinning, lands flat, lies there, scrambles back up
+      const down = u<0.7 ? Math.min(1,u/0.08) : 1-(u-0.7)/0.3;
+      m.rotation.x=1.5*down; m.rotation.z=(-K.side*0.5+Math.sin(K.roll)*0.3)*down; m.rotation.y+=K.spin*dt*0.5;
+    } else if(K.person){                          // big stagger: hops back, flails round, recovers
+      const w=Math.sin(Math.min(1,u)*Math.PI)*0.9*K.k; m.rotation.x=w*0.7; m.rotation.z=-K.side*w; m.rotation.y+=K.spin*dt*0.6;
+    } else {                                      // vehicles, carts, crates: bounce, spin and wobble it out
+      const w=Math.exp(-u*3)*Math.sin(K.t*24)*(K.heavy?0.16:0.4)*K.k; m.rotation.z=w*K.side+(K.heavy?0:Math.sin(K.roll)*0.25*(1-u)); m.rotation.x=w*0.6;
+      if(!K.heavy) m.rotation.y+=K.spin*dt;
     }
-    if(u>=1){ m.rotation.x=0; m.rotation.z=0; if(K.person||!K.heavy){ o.vx=K.saved.vx; o.vz=K.saved.vz; } o.knock=null; }
+    if(u>=1){ m.rotation.x=0; m.rotation.z=0; m.position.y=K.y0; if(K.person||!K.heavy){ o.vx=K.saved.vx; o.vz=K.saved.vz; } o.knock=null; }
   }
 }
 function hitObstacle(o){
