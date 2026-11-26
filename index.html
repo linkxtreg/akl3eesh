@@ -2928,7 +2928,7 @@ function end(title,text){
   clearTimeout(endShowT); endShowT=setTimeout(()=>{
     ui.msg.classList.remove('start'); ui.msg.classList.add('end');
     ui.msg.innerHTML=`<div class="endcard"><h2>${title.replace(/[⏱]/g,'').trim()}</h2>
-      <div class="stats"><span id="stCoins"><img src="ui/art/icons/coins.png" alt=""><em>${Math.round(earned-bonus)}</em></span><span id="stCombo"><img src="ui/art/icons/bolt-combo.png" alt="">${maxCombo}</span><span><img src="ui/art/icons/check.png" alt="">${customersServed}</span><span><img src="ui/art/icons/bread.png" alt="">${loaves.length}</span></div>
+      <div class="stats"><span id="stCoins"><img src="ui/art/icons/coins.png" alt=""><em>${Math.round(earned-bonus)}</em></span><span id="stCombo"><img src="ui/art/icons/bolt-combo.png" alt="">${maxCombo}</span><span><img src="ui/art/icons/check.png" alt="">${customersServed}</span><span><img src="ui/art/icons/bread.png" alt="">${servedLoaves}</span></div>
       ${R?`<div class="lvres"><i>المرحلة ${R.L.n} • الهدف ${R.L.goal} جنيه</i><div class="lvstars">${STAR(R.stars>=1)}${STAR(R.stars>=2)}${STAR(R.stars>=3)}</div><b class="${R.pass?'ok':'no'}">${R.pass?'عدّيت المرحلة!':'حاول تاني'}</b></div>`:''}
       <button class="lvlink" id="toLevels">المراحل</button></div>
       <button id="play" aria-label="العب تاني"><img src="ui/art/icons/btn-play.png" alt=""></button>`;
@@ -4623,8 +4623,8 @@ if(!window.__SIM) import('./ui/kit.js').then(({counter})=>{
   setInterval(()=>{
     const gs=Math.ceil(Math.max(0,ui.msg.classList.contains('start')?TIME_LIMIT:timeLeft)*TIME_SCALE), tt=`${Math.floor(gs/60)}:${String(gs%60).padStart(2,'0')}`;
     if(state==='play') checkAchv();
-    const key=`${loaves.length}|${tt}|${Math.round(earned)}|${state}|${combo}|${paused}|${ui.msg.className}`; if(key===last) return; last=key;
-    b.setText(`${START_LOAVES} / ${loaves.length}`); t.setText(tt); c.setText(String(Math.round(earned)));
+    const key=`${servedLoaves}|${loaves.length}|${tt}|${Math.round(earned)}|${state}|${combo}|${paused}|${ui.msg.className}`; if(key===last) return; last=key;
+    b.setText(`${servedLoaves} / ${loaves.length+servedLoaves}`);   // delivered / still deliverable (dropped loaves come off the total) t.setText(tt); c.setText(String(Math.round(earned)));
     if(k.dataset.v!==String(combo)){ const up=combo>(+k.dataset.v||0); k.dataset.v=combo; k.setText('×'+combo); k.style.filter=combo?'':'grayscale(.7) opacity(.75)';
       if(up){ k.style.transform='scale(1.25)'; setTimeout(()=>k.style.transform='',160); } }
     t.classList.toggle('low', gs<=10 && state==='play');
