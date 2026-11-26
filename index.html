@@ -2662,7 +2662,7 @@ function flutter(b){
 }
 // iPhone: play like media, so the game is heard even with the ring/silent switch on silent (iOS 17+)
 try{ if(navigator.audioSession) navigator.audioSession.type='playback'; }catch(e){}
-addEventListener('pointerdown',()=>{ loadBell(); if(audio?.state==='suspended') audio.resume(); startAmbience(); },{capture:true});   // unlock audio on the first touch
+addEventListener('pointerdown',()=>{ loadBell(); if(audio?.state==='suspended') audio.resume(); startAmbience(); loadCrash(); },{capture:true});   // unlock audio on the first touch
 function hornSound(){
   if(!SET.sfx) return;
   loadBell();
@@ -2695,12 +2695,15 @@ function thump(t,f0,f1,dur,vol){ const o=audio.createOscillator(), g=audio.creat
 function burst(t,type,freq,q,dur,vol){ const s=audio.createBufferSource(), f=audio.createBiquadFilter(), g=audio.createGain(); s.buffer=noiseBuf();
   f.type=type; f.frequency.value=freq; f.Q.value=q; g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
   s.connect(f); f.connect(g); g.connect(audio.destination); s.start(t,Math.random()*0.5); s.stop(t+dur+0.02); }
+let crashBuf=null, crashLoading=false;
+function loadCrash(){ if(crashBuf||crashLoading||!audio) return; crashLoading=true; fetch('ui/sfx/crash.mp3').then(r=>r.arrayBuffer()).then(b=>audio.decodeAudioData(b)).then(d=>crashBuf=d).catch(()=>crashLoading=false); }
 function hitSound(kind='hard', k=0.5){
   if(!SET.sfx) return;
   try{ audio = audio || new (window.AudioContext||window.webkitAudioContext)(); if(audio.state==='suspended') audio.resume();
     const t=audio.currentTime+0.005, v=0.25+0.55*Math.min(1,k);
     if(kind==='person'){ thump(t,140,55,0.18,v*0.9); burst(t,'lowpass',700,0.8,0.12,v*0.5); }
     else if(kind==='wall'){ thump(t,110,40,0.22,v); burst(t,'lowpass',400,0.7,0.18,v*0.6); }
+    else if(kind==='crash' && crashBuf){ const src=audio.createBufferSource(), g=audio.createGain(); g.gain.value=0.9; src.buffer=crashBuf; src.connect(g); g.connect(audio.destination); src.start(); }   // the recorded bike crash
     else if(kind==='crash'){ thump(t,120,35,0.35,1); burst(t,'lowpass',900,0.6,0.4,0.8);
       for(let i=0;i<6;i++){ const tt=t+0.06+i*rnd(0.04,0.09); burst(tt,'bandpass',rnd(1800,3600),6,0.09,0.35); }   // tray and loaves clattering
       burst(t+0.12,'bandpass',5200,10,0.5,0.18); thump(t+0.25,90,45,0.2,0.5); }                                       // bike bell rattle, second bounce
